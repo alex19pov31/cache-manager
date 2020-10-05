@@ -1,0 +1,8 @@
+*.ini
+*.db
+*.log
+__pycache__/
+.vscode/
+.idea/
+.cache/
+.env/
