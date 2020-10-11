@@ -2,12 +2,11 @@ import hashlib
 import pickle
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from typing import Callable
+import socket
+from typing import Callable, Tuple
 
 
 class CacheManager(ABC):
-    def __init__(self, storage_path: str = '.cache'):
-        self.storage_path: str = storage_path
 
     def __call__(self, ttl: timedelta, key: str = None):
         def __(func: Callable):
@@ -35,3 +34,62 @@ class CacheManager(ABC):
     @abstractmethod
     def _save_data(self, data, key: str, ttl: timedelta):
         pass
+
+
+class BaseClient(ABC):
+    def __init__(self, addr: Tuple[str, int], timeout: int = 1):
+        self.addr: Tuple[str, int] = addr
+        self.socket: socket.socket = None
+        self.timeout = timeout
+
+    def _connect(self):
+        self._close()
+        ip, port = self.addr
+        error = None
+        info = socket.getaddrinfo(ip, port, socket.AF_UNSPEC, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+        for family, socktype, proto, _, sockaddr in info:
+            try:
+                self.socket = socket.socket(family, socktype, proto)
+            except Exception as e:
+                error = e
+                if self.socket is not None:
+                    self.socket.close()
+                    self.socket = None
+            else:
+                break
+        if error is not None:
+            raise error
+
+        self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        self.socket.settimeout(self.timeout)
+        self.socket.connect(self.addr)
+
+    def _close(self):
+        if isinstance(self.socket, socket.socket):
+            try:
+                self.socket.close()
+            except Exception:
+                pass
+        self.socket = None
+
+    def _send_command(self, command: bytes, check_connect: bool = True) -> bytes:
+        if not self.socket and check_connect:
+            self._connect()
+
+        self.socket.sendall(command)
+        chunks: list = []
+        while True:
+            try:
+                buf = self.socket.recv(1024)
+                chunks.append(buf)
+
+                if not buf or buf[-2:] == b'\r\n':
+                    break
+            except Exception as e:
+                self._close()
+                raise e
+
+        if not len(chunks):
+            return b''
+
+        return b''.join(chunks)
