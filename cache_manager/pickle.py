@@ -5,6 +5,8 @@ from .base import CacheManager
 
 
 class PickleCache(CacheManager):
+    def __init__(self, storage_path: str = '.cache'):
+        self.storage_path: str = storage_path
 
     def _get_data(self, key: str):
         data = None
