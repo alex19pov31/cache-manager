@@ -1,6 +1,6 @@
 import socket
 from datetime import timedelta
-from typing import Tuple, List
+from typing import Tuple, List, Union
 import pickle
 from cache_manager.base import CacheManager, BaseClient
 
@@ -28,7 +28,7 @@ class MemcachedClient(BaseClient):
 
 
 class MemcachedCache(CacheManager):
-    def __init__(self, addr: Tuple[str, int]):
+    def __init__(self, addr: Union[Tuple[str, int], str]):
         self.client = MemcachedClient(addr)
 
     def _get_data(self, key: str):

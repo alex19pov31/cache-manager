@@ -1,11 +1,11 @@
 import pickle
 from datetime import timedelta
-from typing import Tuple, List
+from typing import Tuple, List, Union
 from cache_manager.base import BaseClient, CacheManager
 
 
 class RedisClient(BaseClient):
-    def __init__(self, addr: Tuple[str, int], timeout: int = 1, password: str = None):
+    def __init__(self, addr: Union[Tuple[str, int], str], timeout: int = 1, password: str = None):
         self.password = password
         super().__init__(addr, timeout)
 
@@ -65,7 +65,7 @@ class RedisClient(BaseClient):
 
 
 class RedisCache(CacheManager):
-    def __init__(self, addr: Tuple[str, int]):
+    def __init__(self, addr: Union[Tuple[str, int], str]):
         self.client = RedisClient(addr)
 
     def _get_data(self, key: str):

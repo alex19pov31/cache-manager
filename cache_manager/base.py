@@ -3,7 +3,7 @@ import pickle
 from abc import ABC, abstractmethod
 from datetime import timedelta
 import socket
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Union
 
 
 class CacheManager(ABC):
@@ -37,16 +37,20 @@ class CacheManager(ABC):
 
 
 class BaseClient(ABC):
-    def __init__(self, addr: Tuple[str, int], timeout: int = 1):
+    def __init__(self, addr: Union[Tuple[str, int], str], timeout: int = 1):
         self.addr: Tuple[str, int] = addr
+        self.timeout: int = timeout
         self.socket: socket.socket = None
-        self.timeout = timeout
 
-    def _connect(self):
-        self._close()
-        ip, port = self.addr
+    def __init_unix_socket(self):
+        self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.socket.settimeout(self.timeout)
+        self.socket.connect(self.addr)
+
+    def __init_inet_socket(self):
+        host, port = self.addr
         error = None
-        info = socket.getaddrinfo(ip, port, socket.AF_UNSPEC, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+        info = socket.getaddrinfo(host, port, socket.AF_UNSPEC, socket.SOCK_STREAM, socket.IPPROTO_TCP)
         for family, socktype, proto, _, sockaddr in info:
             try:
                 self.socket = socket.socket(family, socktype, proto)
@@ -63,6 +67,13 @@ class BaseClient(ABC):
         self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self.socket.settimeout(self.timeout)
         self.socket.connect(self.addr)
+
+    def _connect(self):
+        self._close()
+        if isinstance(self.addr, str):
+            self.__init_unix_socket()
+        elif isinstance(self.addr, tuple):
+            self.__init_inet_socket()
 
     def _close(self):
         if isinstance(self.socket, socket.socket):
