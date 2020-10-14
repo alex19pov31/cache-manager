@@ -1,8 +1,10 @@
-*.ini
-*.db
-*.log
-__pycache__/
-.vscode/
-.idea/
 .cache/
 .env/
+.vscode/
+.idea/
+__pycache__/
+dist/
+build/
+*.egg-info/
+*.csv
+*.json

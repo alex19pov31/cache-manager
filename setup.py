@@ -11,6 +11,7 @@ setup(
     packages=find_packages(),
     description="Simple cache manager",
     long_description=long_description,
+    long_description_content_type='text/markdown',
     author="Alexander Nesterov",
     author_email="alex19pov31@gmail.com",
     license="MIT"
